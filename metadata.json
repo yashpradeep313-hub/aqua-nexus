@@ -1,0 +1,8 @@
+{
+  "name": "Aqua Nexus",
+  "description": "Decision-support system for municipal water authorities: scarcity prediction, crisis prevention, and optimal distribution.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

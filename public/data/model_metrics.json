@@ -1,0 +1,20 @@
+{
+  "_comment": "DEMO VALUES - replace with notebook output. Trained on Kaggle dm1718 benchmark.",
+  "status": "demo values",
+  "isDemoValues": true,
+  "dataset": "Kaggle Water Consumption Competition (dm1718)",
+  "validationMethod": "5-fold cross-validation (the dataset has no timestamps, so a chronological split is not possible). Baseline = 'same hour last week' column provided in the dataset. Primary metric: MAE (official competition metric); WAPE and RMSE shown as secondary.",
+  "primaryMetric": "MAE (Mean Absolute Error)",
+  "mae": 0.48,
+  "naiveBaselineMae": 1.18,
+  "maeImprovementPct": 59.3,
+  "wapePct": 3.82,
+  "naiveBaselineWapePct": 9.45,
+  "rmseML": 0.64,
+  "intervalCoveragePct": 95.3,
+  "anomalyDetectionRatePct": 94.2,
+  "anomalyPrecisionPct": 91.8,
+  "anomalyRecallPct": 88.4,
+  "dataDriftStatus": "No Drift Detected",
+  "notes": "DEMO VALUES - replace with notebook output"
+}

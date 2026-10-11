@@ -1,0 +1,221 @@
+{
+  "entities": {
+    "Zone": {
+      "title": "Zone",
+      "description": "Municipal water distribution zone with pipeline network connections",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "population": { "type": "number" },
+        "households": { "type": "number" },
+        "criticalFacilities": { "type": "number" },
+        "priorityWeight": { "type": "number" },
+        "minGuaranteeML": { "type": "number" },
+        "pipelineCapacityML": { "type": "number" },
+        "currentSupplyML": { "type": "number" },
+        "connectedZoneIds": { "type": "array" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" }
+      },
+      "required": ["id", "name", "code", "population", "priorityWeight", "pipelineCapacityML"]
+    },
+    "Forecast": {
+      "title": "Forecast",
+      "description": "Precomputed hourly forecast for 1-48h with P10, P50, and P90 demands",
+      "type": "object",
+      "properties": {
+        "zoneId": { "type": "string" },
+        "horizonHours": { "type": "number" },
+        "timestamp": { "type": "string" },
+        "p10DemandML": { "type": "number" },
+        "p50DemandML": { "type": "number" },
+        "p90DemandML": { "type": "number" },
+        "lastWeekDemandML": { "type": "number" },
+        "temperatureC": { "type": "number" },
+        "rainMm": { "type": "number" }
+      },
+      "required": ["zoneId", "horizonHours", "p50DemandML", "p90DemandML"]
+    },
+    "Sensitivity": {
+      "title": "Sensitivity",
+      "description": "Sensitivity response grid per zone to temperature and precipitation shifts",
+      "type": "object",
+      "properties": {
+        "zoneId": { "type": "string" },
+        "tempElasticityPctPerC": { "type": "number" },
+        "rainElasticityPctPerMm": { "type": "number" },
+        "baselineTempC": { "type": "number" }
+      },
+      "required": ["zoneId", "tempElasticityPctPerC", "rainElasticityPctPerMm"]
+    },
+    "Anomaly": {
+      "title": "Anomaly",
+      "description": "Detected water consumption or pressure deviation anomalies with hypotheses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "zoneId": { "type": "string" },
+        "zoneName": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "severity": { "type": "string", "enum": ["Low", "Medium", "High", "Critical"] },
+        "actualDemandML": { "type": "number" },
+        "expectedRangeMinML": { "type": "number" },
+        "expectedRangeMaxML": { "type": "number" },
+        "deviationPct": { "type": "number" },
+        "hypothesis": { "type": "string" },
+        "recommendedAction": { "type": "string" },
+        "status": { "type": "string", "enum": ["Investigating", "Resolved", "False alarm"] },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "zoneId", "severity", "hypothesis", "status"]
+    },
+    "Scenario": {
+      "title": "Scenario",
+      "description": "Simulated what-if climate and infrastructure scenarios",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "preset": { "type": "string" },
+        "tempDeltaC": { "type": "number" },
+        "rainDeltaMm": { "type": "number" },
+        "supplyReductionPct": { "type": "number" },
+        "burstZoneId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorEmail": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "preset"]
+    },
+    "Plan": {
+      "title": "Plan",
+      "description": "Saved water optimization plans and operational allocations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "demandPercentile": { "type": "string", "enum": ["p50", "p90"] },
+        "totalSupplyML": { "type": "number" },
+        "emergencyReserveML": { "type": "number" },
+        "fairnessFloor": { "type": "number" },
+        "allocations": { "type": "array" },
+        "transfers": { "type": "array" },
+        "shortageML": { "type": "number" },
+        "shortagePct": { "type": "number" },
+        "fairnessIndex": { "type": "number" },
+        "litresProtectedPerDay": { "type": "number" },
+        "householdsProtected": { "type": "number" },
+        "criticalFacilitiesServed": { "type": "number" },
+        "applied": { "type": "boolean" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "demandPercentile", "totalSupplyML"]
+    },
+    "Metrics": {
+      "title": "Metrics",
+      "description": "Model performance metrics, backtesting evaluations, and drift monitoring",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "lastTrained": { "type": "string" },
+        "wapePct": { "type": "number" },
+        "naiveBaselineWapePct": { "type": "number" },
+        "rmseML": { "type": "number" },
+        "intervalCoveragePct": { "type": "number" },
+        "anomalyPrecisionPct": { "type": "number" },
+        "anomalyRecallPct": { "type": "number" },
+        "dataDriftStatus": { "type": "string" },
+        "featureImportance": { "type": "array" }
+      },
+      "required": ["id", "lastTrained", "wapePct"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role access (Operator or Administrator)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["operator", "admin"] },
+        "department": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "createdAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "AdminMember": {
+      "title": "AdminMember",
+      "description": "Authorized Administrator record for system RBAC gatekeeping",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "assignedBy": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Audit trail log of municipal grid operator and admin actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "actorEmail": { "type": "string" },
+        "actorRole": { "type": "string", "enum": ["operator", "admin"] },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "actorUid", "action"]
+    }
+  },
+  "firestore": {
+    "/zones/{zoneId}": {
+      "schema": { "$ref": "Zone" },
+      "description": "Municipal distribution zones"
+    },
+    "/forecasts/{forecastId}": {
+      "schema": { "$ref": "Forecast" },
+      "description": "Hourly water demand forecasts"
+    },
+    "/sensitivity/{sensitivityId}": {
+      "schema": { "$ref": "Sensitivity" },
+      "description": "Sensitivity coefficients for temperature and rainfall"
+    },
+    "/anomalies/{anomalyId}": {
+      "schema": { "$ref": "Anomaly" },
+      "description": "Detected anomalies and hypothesis investigations"
+    },
+    "/scenarios/{scenarioId}": {
+      "schema": { "$ref": "Scenario" },
+      "description": "Custom operator scenarios and simulations"
+    },
+    "/plans/{planId}": {
+      "schema": { "$ref": "Plan" },
+      "description": "Saved distribution plans and dispatch schedules"
+    },
+    "/metrics/{metricId}": {
+      "schema": { "$ref": "Metrics" },
+      "description": "ML model benchmarks and drift evaluation"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "UserProfile" },
+      "description": "User profiles for Operators and Admins"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "AdminMember" },
+      "description": "Administrator roster granting elevated security privileges"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "Immutable operational audit trails"
+    }
+  }
+}

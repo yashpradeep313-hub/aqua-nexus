@@ -1,0 +1,117 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role-based authorization: check admins collection or bootstrapped runtime admin
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'yashpradeep313@gmail.com'
+      );
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User profiles for Operators and Admins
+    match /users/{userId} {
+      // Split/PII security: only owner or admin can read user profile
+      allow get: if (isOwner(userId) || isAdmin()) && isValidId(userId);
+      allow list: if isAdmin();
+      
+      // User can create their own profile upon registration
+      allow create: if isSignedIn() &&
+        request.auth.uid == userId &&
+        isValidId(userId) &&
+        incoming().uid == request.auth.uid &&
+        (incoming().role == 'operator' || (incoming().role == 'admin' && (isAdmin() || request.auth.token.email == 'yashpradeep313@gmail.com')));
+
+      // Self-update non-RBAC fields, or admin can update any field
+      allow update: if isValidId(userId) && (
+        (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'department', 'lastLogin'])) ||
+        isAdmin()
+      );
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Admins roster: root of trust for admin permissions
+    match /admins/{adminId} {
+      allow read: if isSignedIn() && isValidId(adminId);
+      allow write: if isAdmin() && isValidId(adminId);
+    }
+
+    // Audit logs: immutable operation logs
+    match /audit_logs/{logId} {
+      allow read: if isSignedIn() && isValidId(logId);
+      allow create: if isSignedIn() && isValidId(logId) && incoming().actorUid == request.auth.uid;
+      allow update: if false; // Immutable audit log
+      allow delete: if isAdmin() && isValidId(logId);
+    }
+
+    // Zones - Public read, authenticated write
+    match /zones/{zoneId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(zoneId);
+    }
+
+    // Forecasts - Precomputed ML outputs, public read, authenticated write
+    match /forecasts/{forecastId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(forecastId);
+    }
+
+    // Sensitivity - Climate elasticity parameters, public read, authenticated write
+    match /sensitivity/{sensitivityId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(sensitivityId);
+    }
+
+    // Anomalies - Public read, signed-in operators/admins can update status or write alerts
+    match /anomalies/{anomalyId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(anomalyId);
+    }
+
+    // Scenarios - Public read, signed-in operators/admins write
+    match /scenarios/{scenarioId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(scenarioId);
+    }
+
+    // Plans - Public read, signed-in operators/admins write
+    match /plans/{planId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(planId);
+    }
+
+    // Metrics - Model benchmark reports, public read, authenticated write
+    match /metrics/{metricId} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidId(metricId);
+    }
+  }
+}
