@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   UploadCloud,
   FileText,
@@ -88,6 +88,59 @@ export const CityLearningLab: React.FC<CityLearningLabProps> = ({
   const [selectedFeatureCols, setSelectedFeatureCols] = useState<string[]>([]);
   const [regularizationLambda, setRegularizationLambda] = useState<number>(1.0);
   const [fittingError, setFittingError] = useState<string | null>(null);
+
+  // Keep selectedProfileForFitting synchronized when cityProfiles change or activeProfileId updates
+  useEffect(() => {
+    const matched = cityProfiles.find(p => p.id === activeProfileId) || cityProfiles.find(p => p.id === selectedProfileForFitting.id) || cityProfiles[0];
+    if (matched) {
+      setSelectedProfileForFitting(matched);
+      setSelectedTableIdx(0);
+    }
+  }, [activeProfileId, cityProfiles]);
+
+  // Model Fitting handlers
+  const activeTable = selectedProfileForFitting.tables[selectedTableIdx] || selectedProfileForFitting.tables[0];
+  const numericColumns = activeTable
+    ? activeTable.columns.filter((_, colIdx) => {
+        // Test if rows contain numeric data (handling missing strings like '-', 'N/A')
+        let numCount = 0;
+        const sampleRows = activeTable.rows.slice(0, 25);
+        sampleRows.forEach(row => {
+          const val = row[colIdx];
+          if (typeof val === 'number') numCount++;
+          else if (typeof val === 'string' && val.trim() !== '' && val !== '-' && val !== 'N/A' && !isNaN(parseFloat(val))) numCount++;
+        });
+        return numCount >= Math.min(3, sampleRows.length * 0.4);
+      })
+    : [];
+
+  // Auto-select optimal target and predictor feature columns whenever table or profile changes
+  useEffect(() => {
+    if (!activeTable || numericColumns.length === 0) {
+      setTargetCol('');
+      setSelectedFeatureCols([]);
+      return;
+    }
+
+    // Identify standard water consumption / demand / flow target column candidates
+    const preferredTarget = numericColumns.find(col => {
+      const lower = col.toLowerCase();
+      return (
+        lower.includes('consumption') ||
+        lower.includes('demand') ||
+        lower.includes('flow') ||
+        lower.includes('mld') ||
+        lower.includes('supply_ml') ||
+        lower.includes('quota')
+      );
+    }) || numericColumns[numericColumns.length - 1];
+
+    setTargetCol(preferredTarget);
+
+    // Default features to all remaining numeric columns
+    const remainingFeatures = numericColumns.filter(c => c !== preferredTarget);
+    setSelectedFeatureCols(remainingFeatures);
+  }, [selectedProfileForFitting.id, selectedTableIdx, activeTable?.name]);
 
   // Rename modal / inline
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -284,22 +337,6 @@ export const CityLearningLab: React.FC<CityLearningLabProps> = ({
     setReviewProfile(null);
     setReviewPendingId(null);
   };
-
-  // Model Fitting handlers
-  const activeTable = selectedProfileForFitting.tables[selectedTableIdx] || selectedProfileForFitting.tables[0];
-  const numericColumns = activeTable
-    ? activeTable.columns.filter((_, colIdx) => {
-        // Test if majority of rows are numeric
-        let numCount = 0;
-        const sampleRows = activeTable.rows.slice(0, 15);
-        sampleRows.forEach(row => {
-          const val = row[colIdx];
-          if (typeof val === 'number') numCount++;
-          else if (typeof val === 'string' && !isNaN(parseFloat(val))) numCount++;
-        });
-        return numCount >= sampleRows.length * 0.6;
-      })
-    : [];
 
   const handleFitModel = () => {
     setFittingError(null);
